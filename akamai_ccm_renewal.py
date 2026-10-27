@@ -11,6 +11,7 @@
 # ///
 
 import os
+from dotenv import load_dotenv
 import sys
 import time
 import textwrap
@@ -33,25 +34,29 @@ from cryptography.x509.oid import ExtensionOID
 from acme import client, messages, challenges
 from josepy.jwk import JWKRSA
 
+# This is the magic command that reads the .env file!
+load_dotenv()
+
 # ==========================================
 # CONFIGURATION
 # ==========================================
 EDGERC_PATH = os.path.expanduser("~/.edgerc")
-EDGERC_SECTION = "api-client-swk"
-ACCOUNT_SWITCH_KEY = "1-5BYUG1:1-8BYUX"
-CCM_LINEAGE_ID = "9137"
+EDGERC_SECTION = os.getenv("EDGERC_SECTION")
+ACCOUNT_SWITCH_KEY = os.getenv("ACCOUNT_SWITCH_KEY")
+CCM_LINEAGE_ID = os.getenv("CCM_LINEAGE_ID")
 
 # ACME Account Details
-ACCOUNT_KEY_PATH = r"C:\Users\arno\Desktop\python\acme\account.key"
-DIRECTORY_URL = "https://acme-v02.api.letsencrypt.org/directory"
-ACCOUNT_URI = "https://acme-v02.api.letsencrypt.org/acme/acct/3089591486"
+ACCOUNT_KEY_PATH = os.getenv("ACCOUNT_KEY_PATH")
+DIRECTORY_URL = os.getenv("DIRECTORY_URL")
+ACCOUNT_URI = os.getenv("ACCOUNT_URI")
 
-SMTP_SERVER = "smtp.ziggo.nl"
+# Email Settings
+SMTP_SERVER = os.getenv("SMTP_SERVER")
 SMTP_PORT = 587
-SMTP_USER = "arnoslabbekoorn@ziggo.nl"
-SMTP_PASSWORD = "I1j2m3a4@ziggo"
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 EMAIL_FROM = SMTP_USER
-EMAIL_TO = "a.slabbekoorn@hotmail.nl"
+EMAIL_TO = os.getenv("EMAIL_TO")
 
 # ==========================================
 # AKAMAI SESSION SETUP (Unified)
