@@ -34,24 +34,24 @@ from acme import client, messages, challenges
 from josepy.jwk import JWKRSA
 
 # ==========================================
-# default CONFIGURATION
+# CONFIGURATION
 # ==========================================
 EDGERC_PATH = os.path.expanduser("~/.edgerc")
-EDGERC_SECTION = os.getenv("EDGERC_SECTION")
-ACCOUNT_SWITCH_KEY = os.getenv("ACCOUNT_SWITCH_KEY")
-CCM_LINEAGE_ID = os.getenv("CCM_LINEAGE_ID")
+EDGERC_SECTION = "api-client-swk"
+ACCOUNT_SWITCH_KEY = "1-5BYUG1:1-8BYUX"
+CCM_LINEAGE_ID = "9137"
 
 # ACME Account Details
-ACCOUNT_KEY_PATH = os.getenv("ACCOUNT_KEY_PATH")
-DIRECTORY_URL = os.getenv("DIRECTORY_URL")
-ACCOUNT_URI = os.getenv("ACCOUNT_URI")
+ACCOUNT_KEY_PATH = r"C:\Users\arno\Desktop\python\acme\account.key"
+DIRECTORY_URL = "https://acme-v02.api.letsencrypt.org/directory"
+ACCOUNT_URI = "https://acme-v02.api.letsencrypt.org/acme/acct/3089591486"
 
-SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_PORT = int(os.getenv("SMTP_PORT"))
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_SERVER = "smtp.ziggo.nl"
+SMTP_PORT = 587
+SMTP_USER = "arnoslabbekoorn@ziggo.nl"
+SMTP_PASSWORD = "I1j2m3a4@ziggo"
 EMAIL_FROM = SMTP_USER
-EMAIL_TO = os.getenv("EMAIL_TO")
+EMAIL_TO = "a.slabbekoorn@hotmail.nl"
 
 # ==========================================
 # AKAMAI SESSION SETUP (Unified)
@@ -217,6 +217,51 @@ def wait_for_all_dns(pending_validations, timeout=480):
         if time.time() - start > timeout:
             raise TimeoutError("DNS propagation timed out.")
         time.sleep(10)
+    
+def promote_certificate(session, base_url, lineage_id, generation_id):
+    """Polls Akamai until the certificate is READY_FOR_USE, then promotes it."""
+    import time
+    
+    upload_url = f"{base_url}/ccm/v2/lineages/{lineage_id}/generations/{generation_id}"
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    
+    print("\n⏳ Waiting for Akamai to process the certificate (polling status)...")
+    ready_for_use = False
+    
+    # Poll up to 15 times (every 4 seconds = 60 seconds max)
+    for attempt in range(15):
+        status_resp = session.get(upload_url, headers=headers)
+        if status_resp.ok:
+            gen_status = status_resp.json().get("generationStatus")
+            print(f"   Status check {attempt + 1}/15: {gen_status}")
+            if gen_status == "READY_FOR_USE":
+                ready_for_use = True
+                break
+        time.sleep(4)
+        
+    if not ready_for_use:
+        print("⚠️ Warning: Generation did not reach READY_FOR_USE in time. Promotion might fail.")
+
+    print("\n🚀 Promoting certificate to Staging and Production...")
+    
+    # PAYLOAD FOR PROMOTION
+    activation_payload = {
+        "operationType": "PROMOTE",
+        "generationId": int(generation_id),
+        "networks": ["STAGING", "PRODUCTION"]
+    }
+    
+    activation_url = f"{base_url}/ccm/v2/lineages/{lineage_id}/activations"
+    activation_response = session.post(activation_url, json=activation_payload, headers=headers)
+    
+    if not activation_response.ok:
+        print(f"API Error Response (Promotion): {activation_response.text}")
+        
+    activation_response.raise_for_status()
+    print("✅ Certificate successfully promoted to Staging and Production!")
 
 # ==========================================
 # MAIN WORKFLOW
@@ -322,11 +367,10 @@ def main():
         payload2 = {
             "algorithms": {
                 safe_algo: {
-                    "certificate": leaf_str,
-                    "trustChain": root_str
+                    "signedCertificatePem": leaf_str,
+                    "trustChainPem": root_str
                 }
-            },
-            "autoActivate": ["STAGING", "PRODUCTION"]
+            }
         }
         
         upload_endpoint = f"/ccm/v2/lineages/{CCM_LINEAGE_ID}/generations/{new_gen_id}"
@@ -349,6 +393,11 @@ def main():
             
         result2.raise_for_status()
         print(f"✅ {safe_algo} Certificate successfully uploaded and activated in Akamai CCM.")
+
+        # ==========================================
+        # 9. TRIGGER THE PROMOTION
+        # ==========================================
+        promote_certificate(session, base_url, CCM_LINEAGE_ID, new_gen_id)
         
         send_email(f"SUCCESS: Let's Encrypt Renewal for {primary_domain}", "Certificate renewed and uploaded to Akamai CCM.")
         
