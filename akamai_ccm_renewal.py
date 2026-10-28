@@ -58,6 +58,7 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 EMAIL_FROM = SMTP_USER
 EMAIL_TO = os.getenv("EMAIL_TO")
 
+RENEWAL_THRESHOLD_DAYS = 8
 # ==========================================
 # AKAMAI SESSION SETUP (Unified)
 # ==========================================
@@ -282,11 +283,11 @@ def main():
         
         print(f"Domain: {primary_domain} | Days until expiration: {days_left} | Algorithm: {key_algorithm}")
         
-        if days_left > 85:
-            print("Certificate is valid for more than 85 days. Exiting.")
+        if days_left > RENEWAL_THRESHOLD_DAYS:
+            print(f"Certificate is valid for more than {RENEWAL_THRESHOLD_DAYS} days. Exiting.")
             sys.exit(0)
 
-        print("Expiration is under 85 days. Starting renewal process...")
+        print(f"Expiration is under {RENEWAL_THRESHOLD_DAYS} days. Starting renewal process...")
         send_email(f"Let's Encrypt Renewal Started: {primary_domain}", f"Lineage {CCM_LINEAGE_ID} expires in {days_left} days.")
 
         # 1. GENERATE CSR
