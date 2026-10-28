@@ -168,7 +168,7 @@ def get_domains_from_csr(csr_pem):
 # ==========================================
 # 2. DNS LOGIC
 # ==========================================
-def create_dns_record(record_name, validation, zone="slabbs.nl"):
+def create_dns_record(record_name, validation, zone):
     endpoint = f'/config-dns/v2/zones/{zone}/recordsets'
     url = f"{base_url}{endpoint}"
     
@@ -328,8 +328,10 @@ def main():
             dns_chal = next(c for c in authz.body.challenges if isinstance(c.chall, challenges.DNS01))
             validation = dns_chal.validation(jwk)
             record_name = f"_acme-challenge.{domain}"
+
+            zone = '.'.join(domain.split('.')[-2:])
             
-            create_dns_record(record_name, validation)
+            create_dns_record(record_name, validation, zone)
             pending_dns.append({'record_name': record_name, 'validation': validation})
             challenge_objs.append({'chal': dns_chal, 'domain': domain})
 
