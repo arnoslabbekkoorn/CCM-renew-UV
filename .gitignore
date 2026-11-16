@@ -1,2 +1,4 @@
 testcode-2.py
 .env
+__pycache__/
+*.log
