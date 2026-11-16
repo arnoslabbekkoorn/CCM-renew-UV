@@ -34,10 +34,10 @@ All lineages are still *shown* in the overview, but only lineages created by `ar
 ```
 Lineage  Domain                      Created by  Issuer         Key    Expires     Days  Action
 -------  --------------------------  ----------  -------------  -----  ----------  ----  ------------------------------------------------
-8348     lineage.akamai.********.net   ********      Let's Encrypt  RSA    2026-12-28  41    OK, not due
-9137     slabbs.nl                   arno        Let's Encrypt  ECDSA  2027-01-25  69    OK, not due
-9489     ******.great-demo.com  ********    Demo Local CA  ECDSA  2027-04-24  159   OK, not due
-10093    static.slabbs.nl            arno        -              ECDSA  -           -     SKIP: no signed certificate yet
+8348     lineage.akamai.******.net   ********    Let's Encrypt  RSA    2026-12-28  41    OK, not due
+9137     slab***.nl                   arno       Let's Encrypt  ECDSA  2027-01-25  69    OK, not due
+9489     ******.great-demo.com       ********    Demo Local CA  ECDSA  2027-04-24  159   OK, not due
+10093    static.slab***.nl            arno        -             ECDSA  -           -     SKIP: no signed certificate yet
 ```
 
 4. A lineage is **auto-renewed only when all of these are true**:
